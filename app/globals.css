@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #F8F5EF;
+  --color-ivory: #EFE8DD;
+  --color-beige: #DDD0BF;
+  --color-graphite: #23211E;
+  --color-muted: #6F6860;
+  --color-brand-red: #9F1F2B;
+  --color-brand-dark: #741722;
+  --color-border-fine: #E2D8CB;
+
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-playfair);
+}
+
+@layer base {
+  body {
+    @apply bg-paper text-graphite antialiased font-sans;
+  }
+  
+  ::selection {
+    @apply bg-brand-red/20 text-graphite;
+  }
+}
