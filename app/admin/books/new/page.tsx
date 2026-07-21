@@ -1,8 +1,14 @@
+import { prisma } from '@/lib/prisma';
 import BookForm from '../BookForm';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
-export default function NewBookPage() {
+export default async function NewBookPage() {
+  const categories = await prisma.category.findMany({
+    select: { id: true, title: true },
+    orderBy: { title: 'asc' },
+  });
+
   return (
     <div className="p-8">
       <div className="mb-8">
@@ -12,7 +18,7 @@ export default function NewBookPage() {
         <h1 className="text-2xl font-semibold text-graphite">Dodaj novu knjigu</h1>
       </div>
       <div className="bg-white border border-gray-200 rounded-lg p-8">
-        <BookForm />
+        <BookForm categories={categories} />
       </div>
     </div>
   );

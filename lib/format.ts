@@ -12,6 +12,17 @@ export type BookUI = {
   year?: number
 }
 
+/**
+ * Pretvori URL segment u ID baze. Vraća null za sve što nije pozitivan cijeli broj.
+ *
+ * Bez ove provjere `parseInt('abc')` daje NaN, Prisma ga odbije kao nedostajući
+ * argument i stranica vrati 500 umjesto 404 — što pogađa i Googlebot i skenere.
+ */
+export function toId(raw: string): number | null {
+  const n = Number(raw)
+  return Number.isInteger(n) && n > 0 ? n : null
+}
+
 export function formatPrice(price: unknown): string {
   let num: number
   if (price === null || price === undefined) return '0,00 KM'

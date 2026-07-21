@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { formatPrice } from '@/lib/format';
+import { formatPrice, toId } from '@/lib/format';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -7,8 +7,11 @@ import OrderStatusForm from './OrderStatusForm';
 
 export default async function AdminOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const orderId = toId(id);
+  if (!orderId) notFound();
+
   const order = await prisma.order.findUnique({
-    where: { id: parseInt(id) },
+    where: { id: orderId },
     include: { book: { include: { category: true } } },
   });
   if (!order) notFound();

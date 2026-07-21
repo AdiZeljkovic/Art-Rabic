@@ -23,5 +23,9 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/).*)'],
+  // Statične slike iz public/ su izuzete — inače se middleware (uključujući
+  // HMAC verifikaciju) izvršava za svaku od 166 korica knjiga.
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|api/|images/|.*\\.(?:png|jpg|jpeg|gif|svg|webp|avif|ico)$).*)',
+  ],
 }

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { toId } from '@/lib/format';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -13,7 +14,10 @@ const subjectLabels: Record<string, string> = {
 
 export default async function AdminMessageDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const msg = await prisma.contactMessage.findUnique({ where: { id: parseInt(id) } });
+  const msgId = toId(id);
+  if (!msgId) notFound();
+
+  const msg = await prisma.contactMessage.findUnique({ where: { id: msgId } });
   if (!msg) notFound();
 
   return (

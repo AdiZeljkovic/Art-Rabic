@@ -1,10 +1,14 @@
 import Link from 'next/link';
+import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 
 export const metadata = { title: 'Stranica nije pronađena' };
 
 export default function NotFound() {
   return (
-    <div className="bg-white min-h-screen flex items-center justify-center px-6">
+    <>
+      <Header />
+      <main className="flex-1 bg-white flex items-center justify-center px-6 py-32">
       <div className="max-w-lg text-center">
         <p className="text-8xl font-serif text-brand-red/20 mb-6 select-none">404</p>
         <h1 className="text-3xl md:text-4xl font-serif text-graphite mb-4">Stranica nije pronađena</h1>
@@ -26,6 +30,8 @@ export default function NotFound() {
           </Link>
         </div>
       </div>
-    </div>
+      </main>
+      <Footer />
+    </>
   );
 }

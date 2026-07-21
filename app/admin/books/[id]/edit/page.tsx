@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { toId } from '@/lib/format';
 import BookForm from '../../BookForm';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -6,7 +7,13 @@ import { notFound } from 'next/navigation';
 
 export default async function EditBookPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const book = await prisma.book.findUnique({ where: { id: parseInt(id) } });
+  const bookId = toId(id);
+  if (!bookId) notFound();
+
+  const [book, categories] = await Promise.all([
+    prisma.book.findUnique({ where: { id: bookId } }),
+    prisma.category.findMany({ select: { id: true, title: true }, orderBy: { title: 'asc' } }),
+  ]);
 
   if (!book) notFound();
 
@@ -20,7 +27,7 @@ export default async function EditBookPage({ params }: { params: Promise<{ id: s
         <p className="text-gray-500 mt-1">{book.title}</p>
       </div>
       <div className="bg-white border border-gray-200 rounded-lg p-8">
-        <BookForm book={{ ...book, price: Number(book.price) }} />
+        <BookForm book={{ ...book, price: Number(book.price) }} categories={categories} />
       </div>
     </div>
   );

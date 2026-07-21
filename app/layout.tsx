@@ -1,9 +1,6 @@
 import type {Metadata} from 'next';
 import { Playfair_Display, Inter } from 'next/font/google';
 import './globals.css';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
-import { headers } from 'next/headers';
 
 const playfair = Playfair_Display({
   subsets: ['latin', 'latin-ext'],
@@ -39,19 +36,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({children}: {children: React.ReactNode}) {
-  const headersList = await headers();
-  const pathname = headersList.get('x-pathname') || '';
-  const isAdmin = pathname.startsWith('/admin');
-
+// Root layout namjerno NE poziva headers() — taj poziv forsira dinamički
+// rendering cijelog stabla ruta i poništava `revalidate` na svim stranicama.
+// Header/Footer se sada renderuju u app/(site)/layout.tsx.
+export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="bs">
       <body className={`${playfair.variable} ${inter.variable} flex flex-col min-h-screen`} suppressHydrationWarning>
-        {!isAdmin && <Header />}
-        <main className={isAdmin ? '' : 'flex-1'}>
-          {children}
-        </main>
-        {!isAdmin && <Footer />}
+        {children}
       </body>
     </html>
   );

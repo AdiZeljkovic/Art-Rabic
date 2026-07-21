@@ -1,65 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { makeAdminToken, setAdminCookie } from '@/lib/auth'
+import { getClientIp } from '@/lib/ip'
+import { rateLimit, resetRateLimit } from '@/lib/rate-limit'
 import bcrypt from 'bcryptjs'
 
-const loginAttempts = new Map<string, { count: number; resetAt: number }>()
 const MAX_ATTEMPTS = 5
 const WINDOW_MS = 15 * 60 * 1000
 
-function getClientIp(req: NextRequest): string {
-  return (
-    req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-    req.headers.get('x-real-ip') ||
-    'unknown'
-  )
-}
-
-function checkRateLimit(ip: string): { allowed: boolean; retryAfter?: number } {
-  const now = Date.now()
-  const entry = loginAttempts.get(ip)
-
-  if (!entry || now > entry.resetAt) {
-    loginAttempts.set(ip, { count: 1, resetAt: now + WINDOW_MS })
-    return { allowed: true }
-  }
-  if (entry.count >= MAX_ATTEMPTS) {
-    return { allowed: false, retryAfter: Math.ceil((entry.resetAt - now) / 1000) }
-  }
-  entry.count++
-  return { allowed: true }
-}
+// Hash nepostojeće lozinke — poredimo i kad korisnik ne postoji, da vrijeme
+// odgovora bude isto i ne otkriva postoji li korisničko ime.
+const DUMMY_HASH = '$2a$12$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy'
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req)
-  const rateLimit = checkRateLimit(ip)
+  const key = `login:${ip}`
+  const limit = rateLimit(key, MAX_ATTEMPTS, WINDOW_MS)
 
-  if (!rateLimit.allowed) {
+  if (!limit.allowed) {
     return NextResponse.json(
-      { error: `Previše neuspjelih pokušaja. Pokušajte ponovo za ${Math.ceil((rateLimit.retryAfter ?? 900) / 60)} minuta.` },
-      { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfter) } }
+      { error: `Previše neuspjelih pokušaja. Pokušajte ponovo za ${Math.ceil(limit.retryAfter / 60)} minuta.` },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfter) } }
     )
   }
 
   try {
-    const { username, password } = await req.json()
+    const body = await req.json()
+    const username = typeof body?.username === 'string' ? body.username.trim() : ''
+    const password = typeof body?.password === 'string' ? body.password : ''
 
-    if (!username || !password) {
+    if (!username || !password || username.length > 100 || password.length > 200) {
       return NextResponse.json({ error: 'Korisničko ime i lozinka su obavezni' }, { status: 400 })
     }
 
     const user = await prisma.adminUser.findUnique({ where: { username } })
-    if (!user) {
+    const valid = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH)
+
+    if (!user || !valid) {
       return NextResponse.json({ error: 'Pogrešno korisničko ime ili lozinka' }, { status: 401 })
     }
 
-    const valid = await bcrypt.compare(password, user.passwordHash)
-    if (!valid) {
-      return NextResponse.json({ error: 'Pogrešno korisničko ime ili lozinka' }, { status: 401 })
-    }
-
-    // Reset rate limit on successful login
-    loginAttempts.delete(ip)
+    resetRateLimit(key)
 
     await prisma.adminUser.update({
       where: { id: user.id },

@@ -1,13 +1,23 @@
 import type { MetadataRoute } from 'next'
 import { prisma } from '@/lib/prisma'
 
+// Bez ovoga se sitemap prerenderuje tokom builda i `next build` pada
+// ako baza nije dostupna — deploy postaje nemoguć dok baza ne odgovori.
+export const dynamic = 'force-dynamic'
+export const revalidate = 3600
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://mikulicknjige.com'
 
-  const books = await prisma.book.findMany({
-    where: { inStock: true },
-    select: { id: true, updatedAt: true },
-  })
+  let books: { id: number; updatedAt: Date }[] = []
+  try {
+    books = await prisma.book.findMany({
+      where: { inStock: true },
+      select: { id: true, updatedAt: true },
+    })
+  } catch (err) {
+    console.error('[sitemap] baza nedostupna, vraćam samo statične rute', err)
+  }
 
   const bookUrls = books.map((book) => ({
     url: `${baseUrl}/knjige/${book.id}`,

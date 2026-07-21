@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth'
+import { getClientIp } from '@/lib/ip'
+import { rateLimit } from '@/lib/rate-limit'
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -19,8 +21,17 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const limit = rateLimit(`newsletter:${getClientIp(req)}`, 5, 60 * 60 * 1000)
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'Previše pokušaja. Pokušajte ponovo kasnije.' },
+      { status: 429, headers: { 'Retry-After': String(limit.retryAfter) } }
+    )
+  }
+
   try {
-    const { email } = await req.json()
+    const body = await req.json()
+    const email = typeof body?.email === 'string' ? body.email.trim().slice(0, 180) : ''
     if (!email || !emailRegex.test(email)) {
       return NextResponse.json({ error: 'Unesite ispravnu email adresu' }, { status: 400 })
     }

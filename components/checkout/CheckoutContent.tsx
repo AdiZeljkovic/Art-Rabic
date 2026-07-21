@@ -37,7 +37,11 @@ export default function CheckoutContent({ book }: { book: BookUI }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error('Greška pri slanju narudžbe');
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setError(d.error || 'Došlo je do greške. Molimo pokušajte ponovo.');
+        return;
+      }
       setIsSuccess(true);
     } catch {
       setError('Došlo je do greške. Molimo pokušajte ponovo.');
@@ -54,7 +58,7 @@ export default function CheckoutContent({ book }: { book: BookUI }) {
           <h1 className="text-4xl md:text-5xl font-serif text-graphite mb-6">Uspješna narudžba</h1>
           <p className="text-lg text-muted mb-12">
             Zahvaljujemo na povjerenju. Vaša narudžba za knjigu <strong>{book.title}</strong> je uspješno zaprimljena.
-            Potvrdu ste dobili na e-mail. Kontaktirat ćemo vas u roku od 24 sata.
+            Kontaktirat ćemo vas telefonom u roku od 24 sata radi potvrde i dogovora o dostavi.
           </p>
           <Link
             href="/knjige"

@@ -7,3 +7,6 @@ coverage/
 !.env.example
 
 /generated/prisma
+
+# Build artefakti
+tsconfig.tsbuildinfo

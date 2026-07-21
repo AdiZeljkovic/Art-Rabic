@@ -27,7 +27,11 @@ export default function ContactContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      if (!res.ok) throw new Error('Greška pri slanju poruke');
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setError(d.error || 'Došlo je do greške. Molimo pokušajte ponovo.');
+        return;
+      }
       setIsSubmitted(true);
     } catch {
       setError('Došlo je do greške. Molimo pokušajte ponovo.');

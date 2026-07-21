@@ -9,7 +9,7 @@ export default function Error({ error, reset }: { error: Error; reset: () => voi
   }, [error]);
 
   return (
-    <div className="bg-white min-h-screen flex items-center justify-center px-6">
+    <div className="bg-white min-h-screen flex-1 flex items-center justify-center px-6">
       <div className="max-w-lg text-center">
         <p className="text-8xl font-serif text-brand-red/20 mb-6 select-none">500</p>
         <h1 className="text-3xl md:text-4xl font-serif text-graphite mb-4">Nešto je pošlo po krivu</h1>

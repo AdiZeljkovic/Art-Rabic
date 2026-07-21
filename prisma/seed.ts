@@ -147,16 +147,23 @@ async function main() {
   }
 
   console.log('Kreiranje admin korisnika...')
-  const password = process.env.ADMIN_PASSWORD || 'admin123'
+  const password = process.env.ADMIN_PASSWORD
+  if (!password || password.length < 16) {
+    throw new Error(
+      'ADMIN_PASSWORD nije postavljen ili je kraći od 16 znakova. ' +
+      'Seed odbija kreirati admin nalog sa slabom lozinkom.'
+    )
+  }
+  const username = process.env.ADMIN_USERNAME || 'admin'
   const passwordHash = await bcrypt.hash(password, 12)
   await prisma.adminUser.upsert({
-    where: { username: 'admin' },
+    where: { username },
     update: {},
-    create: { username: 'admin', passwordHash },
+    create: { username, passwordHash },
   })
 
   console.log('Seed završen!')
-  console.log(`Admin login: username=admin, password=${password}`)
+  console.log(`Admin korisnik "${username}" je kreiran. Lozinka je ona iz ADMIN_PASSWORD.`)
 }
 
 main()
