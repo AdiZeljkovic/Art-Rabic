@@ -11,7 +11,9 @@ module.exports = {
     {
       name: 'mikulicknjige',
       script: '.next/standalone/server.js',
-      cwd: '/home/adizeljkovic/web/mikulicknjige.com/nodeapp',
+      // cwd se uzima iz foldera iz kojeg pokreces `pm2 start ecosystem.config.js`.
+      // Postavi APP_DIR ako pokreces iz drugog foldera.
+      cwd: process.env.APP_DIR || __dirname,
       interpreter: 'node',
 
       // FALLBACK ako `npm run build` ne emituje .next/standalone/ (provjeri
@@ -33,15 +35,17 @@ module.exports = {
 
       // Restart politika
       autorestart: true,
-      max_memory_restart: '400M',
+      // Baseline je ~130 MB. Rezerva je za sharp transformacije slika —
+      // `imgOptConcurrency: 1` u next.config.ts drži ih serijalizovanim,
+      // pa peak ostaje ispod ovoga umjesto da uđe u restart petlju.
+      max_memory_restart: '500M',
       min_uptime: '30s',        // ako padne prije 30s smatra se neuspjelim startom
       max_restarts: 10,         // nakon 10 uzastopnih fail-ova PM2 odustaje
       restart_delay: 3000,
       exp_backoff_restart_delay: 200,
 
-      // Logovi
-      out_file: '/home/adizeljkovic/web/mikulicknjige.com/logs/pm2-out.log',
-      error_file: '/home/adizeljkovic/web/mikulicknjige.com/logs/pm2-error.log',
+      // Logovi — default je ~/.pm2/logs/. Instaliraj pm2-logrotate (vidi README),
+      // inace rastu neograniceno.
       merge_logs: true,
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
 

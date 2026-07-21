@@ -2,12 +2,18 @@ import { prisma } from '@/lib/prisma';
 import { formatPrice } from '@/lib/format';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil } from 'lucide-react';
 import DeleteBookButton from './DeleteBookButton';
 
 export default async function AdminBooksPage() {
+  // select, ne include — bez ovoga se povlači i TEXT `description` svih knjiga
+  // (~134 KB po pregledu) koji se u tabeli nigdje ne prikazuje.
   const books = await prisma.book.findMany({
-    include: { category: true },
+    select: {
+      id: true, title: true, author: true, price: true,
+      imageUrl: true, inStock: true, featured: true,
+      category: { select: { title: true } },
+    },
     orderBy: { createdAt: 'desc' },
   });
 
@@ -42,13 +48,16 @@ export default async function AdminBooksPage() {
                 <tr key={book.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-14 relative flex-shrink-0 border border-gray-200 overflow-hidden">
+                      <div className="w-10 h-14 flex-shrink-0 border border-gray-200 overflow-hidden">
+                        {/* Fiksni width/height, ne fill — inače Next enkodira
+                            svih 165 korica na 640px+ za sličicu od 40px. */}
                         <Image
                           src={book.imageUrl || '/book-placeholder.svg'}
                           alt={book.title}
-                          fill
-                          className="object-cover"
-                          referrerPolicy="no-referrer"
+                          width={40}
+                          height={56}
+                          quality={60}
+                          className="object-cover w-full h-full"
                         />
                       </div>
                       <div>

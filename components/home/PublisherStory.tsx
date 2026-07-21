@@ -22,7 +22,7 @@ export default function PublisherStory() {
             {/* Left Side: Bookshelf Image */}
             <div className="w-[35%] sm:w-[40%] relative">
                <Image
-                  src="/hero-bg.png"
+                  src="/hero-bg.webp"
                   alt="Biblioteka Art Rabic"
                   fill
                   sizes="(max-width: 640px) 35vw, 40vw"

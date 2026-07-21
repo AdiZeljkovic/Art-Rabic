@@ -39,14 +39,24 @@ const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   images: {
-    formats: ['image/avif', 'image/webp'],
+    // Samo WebP. AVIF je 2-3x sporiji za enkodiranje — sa 165 korica na jednoj
+    // stranici to je razlika između 30 s i 130 s CPU-a po hladnoj posjeti.
+    formats: ['image/webp'],
     minimumCacheTTL: 31536000,
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    // Izvorne korice su 800px; veće širine bi samo trošile CPU bez dobitka.
+    deviceSizes: [640, 750, 828],
+    imageSizes: [64, 96, 128, 256, 384],
     // Placeholder korice je SVG; bez ovoga optimizer vraća 400 i slika je slomljena.
     // Sandbox CSP sprječava izvršavanje skripti unutar SVG-a.
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+  },
+  experimental: {
+    // Serijalizuj sharp. Bez ovoga paralelne transformacije preko HTTP/2
+    // podignu RSS preko PM2 limita i proces uđe u restart petlju.
+    imgOptConcurrency: 1,
+    imgOptTimeoutInSeconds: 10,
   },
   output: 'standalone',
   transpilePackages: ['motion'],

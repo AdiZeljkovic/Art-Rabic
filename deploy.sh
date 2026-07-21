@@ -18,13 +18,18 @@
 #
 set -euo pipefail
 
-APP_DIR="/home/adizeljkovic/web/mikulicknjige.com/nodeapp"
-APP_NAME="mikulicknjige"
-BRANCH="main"
-PORT="3006"
-HEALTH_URL="http://127.0.0.1:${PORT}/"
-BACKUP_DIR="/home/adizeljkovic/backups/mikulic"
-DB_NAME="adizeljkovic_mikulic"
+# Konfiguracija — sve se moze pregaziti preko environmenta ili deploy.conf,
+# da skripta radi na bilo kojem serveru bez izmjene koda:
+#   APP_DIR=/putanja/do/app DB_NAME=moja_baza ./deploy.sh
+[[ -f "$(dirname "$0")/deploy.conf" ]] && source "$(dirname "$0")/deploy.conf"
+
+APP_DIR="${APP_DIR:-$(cd "$(dirname "$0")" && pwd)}"
+APP_NAME="${APP_NAME:-mikulicknjige}"
+BRANCH="${BRANCH:-main}"
+PORT="${PORT:-3006}"
+HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:${PORT}/}"
+BACKUP_DIR="${BACKUP_DIR:-$HOME/backups/mikulicknjige}"
+DB_NAME="${DB_NAME:-}"
 
 log()  { echo -e "\033[1;34m[deploy]\033[0m $*"; }
 err()  { echo -e "\033[1;31m[deploy:ERROR]\033[0m $*" >&2; }
@@ -44,14 +49,20 @@ CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 [[ -f .env ]] || die ".env ne postoji na serveru."
 
 # ---------------------------------------------------------------- 2. backup baze
-log "Backup baze prije migracija..."
-mkdir -p "$BACKUP_DIR"
-PREDEPLOY_DUMP="$BACKUP_DIR/predeploy-$(date +%F-%H%M%S).sql.gz"
-mysqldump --defaults-file="$HOME/.my.cnf" \
-  --single-transaction --routines --triggers --events \
-  "$DB_NAME" | gzip > "$PREDEPLOY_DUMP" \
-  || die "mysqldump neuspjesan - prekidam deploy."
-log "Backup: $PREDEPLOY_DUMP"
+PREDEPLOY_DUMP=""
+if [[ -n "$DB_NAME" && -f "$HOME/.my.cnf" ]]; then
+  log "Backup baze prije migracija..."
+  mkdir -p "$BACKUP_DIR"
+  PREDEPLOY_DUMP="$BACKUP_DIR/predeploy-$(date +%F-%H%M%S).sql.gz"
+  mysqldump --defaults-file="$HOME/.my.cnf" \
+    --single-transaction --routines --triggers --events \
+    "$DB_NAME" | gzip > "$PREDEPLOY_DUMP" \
+    || die "mysqldump neuspjesan - prekidam deploy."
+  log "Backup: $PREDEPLOY_DUMP"
+else
+  err "UPOZORENJE: preskacem backup baze (DB_NAME ili ~/.my.cnf nisu postavljeni)."
+  err "Migracije ce se izvrsiti BEZ backupa. Vidi README, sekcija Backup."
+fi
 
 # ---------------------------------------------------------------- 3. git pull
 PREV_COMMIT="$(git rev-parse HEAD)"
@@ -82,14 +93,25 @@ log "prisma migrate deploy..."
 npx prisma migrate deploy || die "Migracije neuspjesne. Baza je backupovana u $PREDEPLOY_DUMP"
 
 # ---------------------------------------------------------------- 6. build + rollback
-log "Build..."
+# Build ide u .next.new, pa se tek na uspjeh zamijeni. Da build pise direktno
+# u .next, aplikacija bi tokom 1-2 minute servirala nepostojece JS chunkove
+# (bijela stranica + 404 na /_next/static/*) svakom posjetiocu.
+log "Build u .next.new..."
 rm -rf .next.new .next.old
-if ! npm run build; then
+if ! npx next build --distDir .next.new; then
   err "BUILD PAO. Stari .next je netaknut, aplikacija i dalje radi."
   err "Vracam kod na $PREV_COMMIT"
   git reset --hard "$PREV_COMMIT"
+  rm -rf .next.new
   exit 1
 fi
+
+# Prenesi keš optimizovanih slika da prvi posjetioci ne cekaju rekompresiju
+[[ -d .next/cache ]] && cp -r .next/cache .next.new/cache 2>/dev/null || true
+
+log "Zamjena builda..."
+[[ -d .next ]] && mv .next .next.old
+mv .next.new .next
 
 # ---------------------------------------------------------------- 7. standalone assets
 if [[ -f .next/standalone/server.js ]]; then
@@ -119,15 +141,20 @@ done
 if [[ "$HEALTHY" -ne 1 ]]; then
   err "Health check PAO (zadnji HTTP kod: ${CODE:-n/a}). Vracam na $PREV_COMMIT."
   git reset --hard "$PREV_COMMIT"
-  npm ci
-  npx prisma generate
-  npm run build
-  cp -r public .next/standalone/public
-  cp -r .next/static .next/standalone/.next/static
+  # Prethodni build je jos tu — vrati ga umjesto ponovnog buildanja
+  if [[ -d .next.old ]]; then
+    rm -rf .next && mv .next.old .next
+  else
+    npm ci && npx prisma generate && npm run build
+    cp -r public .next/standalone/public
+    cp -r .next/static .next/standalone/.next/static
+  fi
   pm2 reload "$APP_NAME" --update-env
-  err "Rollback zavrsen. Baza NIJE vracena - ako su migracije problem: gunzip < $PREDEPLOY_DUMP | mysql $DB_NAME"
+  err "Rollback zavrsen. Baza NIJE vracena."
+  [[ -n "$PREDEPLOY_DUMP" ]] && err "Ako su migracije problem: gunzip < $PREDEPLOY_DUMP | mysql $DB_NAME"
   exit 1
 fi
 
+rm -rf .next.old
 pm2 save
 log "DEPLOY USPJESAN. Commit: $NEW_COMMIT"

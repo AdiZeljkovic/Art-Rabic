@@ -1,9 +1,9 @@
 import type { MetadataRoute } from 'next'
 import { prisma } from '@/lib/prisma'
 
-// Bez ovoga se sitemap prerenderuje tokom builda i `next build` pada
-// ako baza nije dostupna — deploy postaje nemoguć dok baza ne odgovori.
-export const dynamic = 'force-dynamic'
+// Keširaj na sat vremena. Zaštitu od pada builda kad baza nije dostupna
+// pruža try/catch ispod, ne `force-dynamic` — koji bi ovdje samo značio
+// jedan upit u bazu po svakom crawleru.
 export const revalidate = 3600
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

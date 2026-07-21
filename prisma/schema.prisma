@@ -37,6 +37,8 @@ model Book {
 
   @@index([categoryId])
   @@index([featured])
+  // Pokriva stvarni upit kataloga: WHERE inStock = 1 ORDER BY createdAt DESC
+  @@index([inStock, createdAt])
 }
 
 model Order {

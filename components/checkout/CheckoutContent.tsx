@@ -99,8 +99,8 @@ export default function CheckoutContent({ book }: { book: BookUI }) {
                     src={book.image}
                     alt={book.title}
                     fill
+                    sizes="96px"
                     className="object-cover"
-                    referrerPolicy="no-referrer"
                   />
                 </div>
                 <div>

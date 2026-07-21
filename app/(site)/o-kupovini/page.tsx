@@ -8,7 +8,7 @@ export const metadata = {
 export default function OKupoviniPage() {
   return (
     <div className="bg-white min-h-screen pt-24">
-      <section className="bg-[url('/hero-kontakt.png')] bg-cover bg-center py-14 sm:py-20 md:py-28 text-center px-4 sm:px-6 relative overflow-hidden">
+      <section className="bg-[url('/hero-kontakt.webp')] bg-cover bg-center py-14 sm:py-20 md:py-28 text-center px-4 sm:px-6 relative overflow-hidden">
         <div className="max-w-3xl mx-auto relative z-10">
           <div className="w-16 h-1 bg-brand-red mx-auto mb-8"></div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif text-graphite mb-6">O kupovini</h1>

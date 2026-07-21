@@ -14,7 +14,7 @@ export default function FeaturedBook({ book }: { book: BookUI | null }) {
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/featured-bg.png"
+          src="/featured-bg.webp"
           alt="Featured Image Background"
           fill
           priority

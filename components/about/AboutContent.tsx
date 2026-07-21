@@ -12,7 +12,7 @@ export default function AboutContent() {
           <div className="lg:col-span-5">
             <div className="relative z-10 aspect-[3/4] w-full max-w-md mx-auto shadow-2xl">
               <Image
-                src="/goran.png"
+                src="/goran.webp"
                 alt="Goran Mikulić"
                 fill
                 priority

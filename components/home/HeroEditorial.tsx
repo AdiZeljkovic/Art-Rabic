@@ -11,7 +11,7 @@ export default function HeroEditorial() {
       {/* Background Image Layer */}
       <div className="absolute inset-0 z-0 bg-paper">
          <Image
-            src="/hero-bg.png"
+            src="/hero-bg.webp"
             alt="Art Rabic Kompozicija"
             fill
             priority

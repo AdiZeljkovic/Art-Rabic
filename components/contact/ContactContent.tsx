@@ -44,7 +44,7 @@ export default function ContactContent() {
     <div className="bg-white min-h-screen pt-24">
       {/* Simple Clean Hero Section */}
       <section className="bg-graphite py-14 sm:py-20 md:py-28 text-center px-4 sm:px-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/hero-kontakt.png')] bg-cover bg-center"></div>
+        <div className="absolute inset-0 bg-[url('/hero-kontakt.webp')] bg-cover bg-center"></div>
         <div className="max-w-3xl mx-auto relative z-10">
           <div className="w-16 h-1 bg-brand-red mx-auto mb-8"></div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif text-graphite mb-6">
